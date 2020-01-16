@@ -39,12 +39,12 @@ class Item
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
      */
-    private $position;
+    private $filePath;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
+     * @ORM\Column(type="string", length=255)
      */
-    private $filePath;
+    private $position;
 
     public function getId(): ?int
     {
@@ -99,17 +99,6 @@ class Item
         return $this;
     }
 
-    public function getPosition(): ?string
-    {
-        return $this->position;
-    }
-
-    public function setPosition(string $position): self
-    {
-        $this->position = $position;
-
-        return $this;
-    }
 
     public function getFilePath(): ?string
     {
@@ -119,6 +108,18 @@ class Item
     public function setFilePath(?string $filePath): self
     {
         $this->filePath = $filePath;
+
+        return $this;
+    }
+
+    public function getPosition(): ?string
+    {
+        return $this->position;
+    }
+
+    public function setPosition(string $position): self
+    {
+        $this->position = $position;
 
         return $this;
     }

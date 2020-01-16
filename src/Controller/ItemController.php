@@ -36,13 +36,13 @@ class ItemController extends AbstractController
      */
     public function new(Request $request): Response
     {
+        $data = json_decode($request->getContent(),true);
         $item = new Item();
         $form = $this->createForm(ItemType::class, $item);
-        $form->handleRequest($request);
-
+        $newData = $form->submit($data)->getData();
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager = $this->getDoctrine()->getManager();
-            $entityManager->persist($item);
+            $entityManager->persist($newData);
             $entityManager->flush();
 
             return $this->json([
@@ -72,25 +72,42 @@ class ItemController extends AbstractController
      * @param Request $request
      * @return Response
      */
-    public function edit(Request $request): Response
+    public function edit(Request $request, EntityManagerInterface $em): Response
     {
-        $items = json_decode($request->getContent())->items;
+        $items = json_decode($request->getContent(), true);
 
-        $form = $this->createForm(ItemsListType::class, $items);
-        $data = $form->submit($items)->getData();
-        if ($form->isValid()) {
-            foreach($data as $item) {
-                $this->getDoctrine()->getManager()->persist($item);
+        $existingItems = $this->getDoctrine()->getRepository(Item::class)->findAll();
+
+        $idsToUpdate = array_filter(array_column($items['items'], 'id'));
+        $entitiesToUpdate = [];
+        foreach ($existingItems as $entity) {
+            if (in_array($entity->getId(), $idsToUpdate)) {
+                $entitiesToUpdate[] = $entity;
+            } else {
+                $em->remove($entity);
             }
-
-            $this->getDoctrine()->getManager()->flush();
-
-            return $this->json(['success'=> 'data submited succesfully']);
         }
 
-        return $this->json([
-            'error' => $form->getErrors()
-        ]);
+        $form = $this->createForm(ItemsListType::class, ['items'=> $entitiesToUpdate]);
+        $data = $form->submit(json_decode($request->getContent(),true), false)->get('items')->getData();
+
+            foreach($data as $item) {
+                $em->persist($item);
+            }
+            try {
+                $this->getDoctrine()->getManager()->flush();
+                return $this->json(['success'=> 'data submited succesfully']);
+
+            } catch (Exception $exception) {
+                $response = $this->json([
+                    'error' => $exception,
+                    'formError' => $form->getErrors(),
+                    'submitted' => $form->isSubmitted(),
+                    'valid' => $form->isValid()
+                ]);
+
+                return new Response($response, Response::HTTP_BAD_REQUEST);
+            }
     }
 
     /**
