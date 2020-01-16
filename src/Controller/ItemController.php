@@ -7,6 +7,7 @@ use App\Form\ItemsListType;
 use App\Form\ItemType;
 use App\Repository\ItemRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use http\Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -68,42 +69,31 @@ class ItemController extends AbstractController
     }
 
     /**
-     * @Route("/edit", name="item_edit", methods={"PUT"})
+     * @Route("/reorder", name="item_edit", methods={"PUT"})
      * @param Request $request
      * @return Response
      */
     public function edit(Request $request, EntityManagerInterface $em): Response
     {
-        $items = json_decode($request->getContent(), true);
-
+        $items = json_decode($request->getContent())->items;
         $existingItems = $this->getDoctrine()->getRepository(Item::class)->findAll();
 
-        $idsToUpdate = array_filter(array_column($items['items'], 'id'));
-        $entitiesToUpdate = [];
-        foreach ($existingItems as $entity) {
-            if (in_array($entity->getId(), $idsToUpdate)) {
-                $entitiesToUpdate[] = $entity;
-            } else {
-                $em->remove($entity);
-            }
-        }
+            foreach($items as $item) {
+                foreach ($existingItems as $existingItem) {
+                    if($existingItem->getId() === $item->id) {
+                        $data = $existingItem->setPosition($item->position);
+                        $em->persist($data);
+                        }
+                    }
+                }
 
-        $form = $this->createForm(ItemsListType::class, ['items'=> $entitiesToUpdate]);
-        $data = $form->submit(json_decode($request->getContent(),true), false)->get('items')->getData();
-
-            foreach($data as $item) {
-                $em->persist($item);
-            }
             try {
                 $this->getDoctrine()->getManager()->flush();
                 return $this->json(['success'=> 'data submited succesfully']);
 
             } catch (Exception $exception) {
                 $response = $this->json([
-                    'error' => $exception,
-                    'formError' => $form->getErrors(),
-                    'submitted' => $form->isSubmitted(),
-                    'valid' => $form->isValid()
+                    'error' => $exception->getMessage(),
                 ]);
 
                 return new Response($response, Response::HTTP_BAD_REQUEST);

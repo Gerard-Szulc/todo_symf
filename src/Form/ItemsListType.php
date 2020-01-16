@@ -22,7 +22,6 @@ class ItemsListType extends AbstractType
     {
         $resolver->setDefaults([
             'allow_extra_fields' => true,
-            'csrf_protection' => false
         ]);
     }
 }
