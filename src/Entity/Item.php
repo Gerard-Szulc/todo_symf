@@ -32,11 +32,6 @@ class Item
     private $deadlineAt;
 
     /**
-     * @ORM\Column(type="boolean")
-     */
-    private $done;
-
-    /**
      * @ORM\Column(type="string", length=255, nullable=true)
      */
     private $filePath;
@@ -45,6 +40,11 @@ class Item
      * @ORM\Column(type="string", length=255)
      */
     private $position;
+
+    /**
+     * @ORM\OneToOne(targetEntity="App\Entity\Picture", mappedBy="item", cascade={"persist", "remove"})
+     */
+    private $file;
 
     public function getId(): ?int
     {
@@ -87,18 +87,6 @@ class Item
         return $this;
     }
 
-    public function getDone(): ?bool
-    {
-        return $this->done;
-    }
-
-    public function setDone(bool $done): self
-    {
-        $this->done = $done;
-
-        return $this;
-    }
-
 
     public function getFilePath(): ?string
     {
@@ -120,6 +108,24 @@ class Item
     public function setPosition(string $position): self
     {
         $this->position = $position;
+
+        return $this;
+    }
+
+    public function getFile(): ?Picture
+    {
+        return $this->file;
+    }
+
+    public function setFile(?Picture $file): self
+    {
+        $this->file = $file;
+
+        // set (or unset) the owning side of the relation if necessary
+        $newItem = null === $file ? null : $this;
+        if ($file->getItem() !== $newItem) {
+            $file->setItem($newItem);
+        }
 
         return $this;
     }

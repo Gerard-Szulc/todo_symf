@@ -17,7 +17,6 @@ class ItemType extends AbstractType
             ->add('title',TextType::class)
             ->add('description', TextType::class)
             ->add('deadlineAt', DateTimeType::class, ['widget' => 'single_text'])
-            ->add('done')
             ->add('filePath',TextType::class)
             ->add('position',TextType::class)
         ;
